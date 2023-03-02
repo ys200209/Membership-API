@@ -24,7 +24,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-//@ToString
 public class Membership {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
