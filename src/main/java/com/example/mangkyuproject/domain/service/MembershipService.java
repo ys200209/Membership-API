@@ -12,10 +12,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MembershipService {
+
+    private final PointService ratePointService;
     private final MembershipRepository membershipRepository;
 
     public MembershipAddResponse addMembership(final String userId, final MembershipType membershipType, final Integer point) {
@@ -81,5 +85,22 @@ public class MembershipService {
         }
 
         membershipRepository.deleteById(membershipId);
+    }
+
+    @Transactional
+    public void accumulateMembershipPoint(final Long membershipId, final String userId, final int amount) {
+        Membership membership = membershipRepository
+                .findById(membershipId)
+                .orElseThrow(() -> new MembershipException(MembershipErrorResult.MEMBERSHIP_NOT_FOUND));
+
+        if (!membershipRepository
+                        .findById(membershipId)
+                        .orElseThrow(() -> new MembershipException(MembershipErrorResult.MEMBERSHIP_NOT_FOUND)).getUserId().equals(userId)) {
+            throw new MembershipException(MembershipErrorResult.NOT_MEMBERSHIP_OWNER);
+        }
+
+        final int additionalAmount = ratePointService.calculateAmount(amount);
+
+        membership.setPoint(additionalAmount + membership.getPoint());
     }
 }

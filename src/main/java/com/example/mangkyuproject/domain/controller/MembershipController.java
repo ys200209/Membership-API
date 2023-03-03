@@ -6,12 +6,18 @@ import com.example.mangkyuproject.domain.membership.dto.MembershipDetailResponse
 import com.example.mangkyuproject.domain.membership.dto.MembershipRequest;
 import com.example.mangkyuproject.domain.membership.dto.MembershipAddResponse;
 import com.example.mangkyuproject.domain.service.MembershipService;
+import com.example.mangkyuproject.domain.service.PointService;
+import com.example.mangkyuproject.utils.exception.MembershipErrorResult;
+import com.example.mangkyuproject.utils.exception.MembershipException;
+import com.example.mangkyuproject.utils.validation.ValidationGroups.MembershipAccumulateMarker;
+import com.example.mangkyuproject.utils.validation.ValidationGroups.MembershipAddMarker;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 @RequiredArgsConstructor
 public class MembershipController {
     private final MembershipService membershipService;
+    private final PointService pointService;
 
     @GetMapping("/api/v1/memberships")
     public ResponseEntity<List<MembershipDetailResponse>> getMembershipList(
@@ -34,14 +41,12 @@ public class MembershipController {
     @PostMapping("/api/v1/memberships")
     public ResponseEntity<MembershipAddResponse> addMembership(
             @RequestHeader(USER_ID_HEADER) final String userId,
-            @RequestBody @Valid final MembershipRequest membershipRequest) {
+            @RequestBody @Validated(MembershipAddMarker.class) final MembershipRequest membershipRequest) { // Validated 그룹 대상으로 멤버십 추가 적용
 
-        MembershipAddResponse response = membershipService.addMembership(userId,
-                membershipRequest.getMembershipType(), membershipRequest.getPoint());
+        final MembershipAddResponse membershipResponse = membershipService.addMembership(userId, membershipRequest.getMembershipType(), membershipRequest.getPoint());
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(membershipResponse);
     }
 
     @DeleteMapping("/api/v1/memberships/{membershipId}")
@@ -50,6 +55,16 @@ public class MembershipController {
             @PathVariable("membershipId") Long membershipId) {
         membershipService.removeMembership(membershipId, userId);
 
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/api/v1/memberships/{membershipId}/accumulate")
+    public ResponseEntity<Void> accumulateMembershipPoint(
+            @RequestHeader(USER_ID_HEADER) final String userId,
+            @PathVariable final Long membershipId,
+            @RequestBody @Validated(MembershipAccumulateMarker.class) final MembershipRequest membershipRequest) { // @Validate 적용 그룹 대상으로 적립 적용
+
+        membershipService.accumulateMembershipPoint(membershipId, userId, membershipRequest.getPoint());
         return ResponseEntity.noContent().build();
     }
 }

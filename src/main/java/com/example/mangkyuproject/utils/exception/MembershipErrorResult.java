@@ -12,6 +12,7 @@ public enum MembershipErrorResult {
     MEMBERSHIP_NOT_FOUND(HttpStatus.NOT_FOUND, "Membership Not found"),
     DUPLICATED_MEMBERSHIP_REGISTER(HttpStatus.BAD_REQUEST, "Duplicated Membership Register Request"),
     UNKNOWN_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "Unknown Exception"),
+    INVALID_NUMBER_RANGE(HttpStatus.BAD_REQUEST, "Invalid Number Range"),
 
     ;
 

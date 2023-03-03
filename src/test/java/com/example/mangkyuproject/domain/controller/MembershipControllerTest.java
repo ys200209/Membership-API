@@ -205,12 +205,67 @@ public class MembershipControllerTest {
         resultActions.andExpect(status().isNoContent());
     }
 
+    @Test
+    public void 멤버십적립실패_사용자식별값이헤더에없음() throws Exception {
+        // given
+        final String url = "/api/v1/memberships/-1/accumulate";
+
+        // when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.post(url)
+                        .content(gson.toJson(membershipRequest(10000)))
+                        .contentType(MediaType.APPLICATION_JSON)
+        );
+
+        // then
+        resultActions.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void 멤버십적립실패_포인트가음수() throws Exception {
+        // given
+        final String url = "/api/v1/memberships/-1/accumulate";
+
+        // when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.post(url)
+                        .header(USER_ID_HEADER, "12345")
+                        .content(gson.toJson(membershipRequest(-1, MembershipType.NAVER)))
+                        .contentType(MediaType.APPLICATION_JSON)
+        );
+
+        // then
+        resultActions.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void 멤버십적립성공() throws Exception {
+        // given
+        final String url = "/api/v1/memberships/-1/accumulate";
+
+        // when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.post(url)
+                        .header(USER_ID_HEADER, "12345")
+                        .content(gson.toJson(membershipRequest(10000)))
+                        .contentType(MediaType.APPLICATION_JSON)
+        );
+
+        // then
+        resultActions.andExpect(status().isNoContent());
+    }
     private static Stream<Arguments> invalidRequestParam() {
         return Stream.of(
                 Arguments.of(new MembershipRequest(null, MembershipType.NAVER)),
                 Arguments.of(new MembershipRequest(-1, MembershipType.NAVER)),
                 Arguments.of(new MembershipRequest(10000, null))
         );
+    }
+
+    private MembershipRequest membershipRequest(final Integer point) {
+        return MembershipRequest.builder()
+                .point(point)
+                .build();
     }
 
     private MembershipRequest membershipRequest(final Integer point, final MembershipType membershipType) {
